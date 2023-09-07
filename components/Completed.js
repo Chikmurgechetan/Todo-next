@@ -1,6 +1,6 @@
 // Import necessary libraries and styles at the top
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import classes from "./Completed.module.css";
 
@@ -9,15 +9,67 @@ function Completed() {
   const [todoList, setTodoList] = useState([]);
   const router = useRouter();
 
-  const submitHandler = (event) => {
+//Function Fetch the data From the backend 
+ 
+const fetchData = async () =>{
+
+   const response = await fetch("/api");
+   if(response.ok){
+   
+    const data = await response.json();
+    setTodoList(data); 
+    
+   } else {
+    console.log(data);
+   }
+
+}
+   
+// useEffect to fetch data
+
+useEffect(()=>{
+  fetchData();
+},)
+
+
+
+
+  const submitHandler = async (event) => {
     event.preventDefault();
 
     // Create a new task object with a unique ID and initial 'isCompleted' value
     const newTask = { id: Date.now(), todo, isCompleted: false };
 
-    setTodoList((prevList) => [...prevList, newTask]);
-    setTodo(""); // Clear the input field
+
+
+
+
+   
+    // Perform a POST request to add the new task
+    try {
+      const response = await fetch("/api", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newTask),
+      });
+
+      if (response.ok) {
+        setTodoList((prevList) => [...prevList, newTask]);
+        setTodo(""); // Clear the input field
+      } else {
+        console.log("Error:", response.status);
+      }
+    } catch (error) {
+      console.error("Error:", error.message);
+    }
   };
+     
+
+
+    
+  
 
   const changeTodo = (event) => {
     setTodo(event.target.value);
