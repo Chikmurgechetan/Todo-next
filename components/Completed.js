@@ -1,5 +1,3 @@
-// Import necessary libraries and styles at the top
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import classes from "./Completed.module.css";
@@ -7,92 +5,130 @@ import classes from "./Completed.module.css";
 function Completed() {
   const [todo, setTodo] = useState("");
   const [todoList, setTodoList] = useState([]);
+  const [editingItemId, setEditingItemId] = useState(null);
   const router = useRouter();
 
-//Function Fetch the data From the backend 
- 
-const fetchData = async () =>{
+  const fetchData = async () => {
+    try {
+      const response = await fetch("/api");
+      if (response.ok) {
+        const data = await response.json();
+        setTodoList(data);
+      } else {
+        console.error("Error fetching data:", response.status);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error.message);
+    }
+  };
 
-   const response = await fetch("/api");
-   if(response.ok){
-   
-    const data = await response.json();
-    setTodoList(data); 
-    
-   } else {
-    console.log(data);
-   }
-
-}
-   
-// useEffect to fetch data
-
-useEffect(()=>{
-  fetchData();
-},)
-
-
-
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const submitHandler = async (event) => {
     event.preventDefault();
+    if (!todo.trim()) {
+      // Validate that the todo is not empty
+      return;
+    }
 
-    // Create a new task object with a unique ID and initial 'isCompleted' value
-    const newTask = { id: Date.now(), todo, isCompleted: false };
+    const newTask = { todo, isCompleted: false };
 
-
-
-
-
-   
-    // Perform a POST request to add the new task
     try {
-      const response = await fetch("/api", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newTask),
-      });
-
-      if (response.ok) {
-        setTodoList((prevList) => [...prevList, newTask]);
-        setTodo(""); // Clear the input field
+      if (editingItemId) {
+        const response = await fetch(`/api/${editingItemId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newTask),
+        });
+        if (response.ok) {
+          console.log("Item updated successfully");
+          setEditingItemId(null);
+        } else {
+          console.error("Error updating item:", response.status);
+        }
       } else {
-        console.log("Error:", response.status);
+        const response = await fetch("/api", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newTask),
+        });
+
+        if (response.ok) {
+          fetchData();
+          setTodo("");
+        } else {
+          console.error("Error adding item:", response.status);
+        }
       }
     } catch (error) {
       console.error("Error:", error.message);
     }
   };
-     
-
-
-    
-  
 
   const changeTodo = (event) => {
     setTodo(event.target.value);
   };
 
-  const handleCheckboxChange = (id) => {
-    const updatedData = todoList.map((item) => {
-      if (item.id === id) {
-        return {
-          ...item,
-          isCompleted: !item.isCompleted,
-        };
-      }
-      return item;
+  const handleCheckboxChange = async (id) => {
+   
+      const updatedData = todoList.map((item) => {
+        if (item._id === id) {
+          // Toggle the isCompleted value
+          console.log(item);
+          return {
+            ...item,
+            isCompleted: !item.isCompleted,
+          };
+        }
+        return item;
+      });
+  
+      setTodoList(updatedData);
+         
+    const updatedItem = updatedData.find((item) => item._id === id);
+    const response = await fetch(`/api/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedItem),
     });
+    
+    console.log(response);
+    const responseData = await response.text(); // Try using response.text() instead of response.json()
+    console.log(responseData);
+    
+   
+  };
+  
+  
+  
+  
+  const handleDeleteItem = async (id) => {
+   try{
+    const response = await fetch (`/api/${id}`,{
+    method:'DELETE',
+   });
 
-    setTodoList(updatedData);
+   if(response.ok){
+    fetchData()
+   console.log("item deleted successfully");
+  } else {
+    console.log("error deleting item:", response.status);
+ }
+} catch (error) {
+  console.log("Error deleting item", error. message);
+}
+    
   };
 
-  const handleDeleteItem = (id) => {
-    // Remove the item when the delete button is clicked
-    setTodoList((prevItems) => prevItems.filter((item) => item.id !== id));
-  };
+
 
   const navigateHandler = () => {
     router.push("/completed");
@@ -116,20 +152,20 @@ useEffect(()=>{
         </form>
       </div>
       <div className={classes.todoList}>
-        <h2>Today Thinks:</h2>
+        <h2>Today's Tasks:</h2>
         <ul className={classes.list}>
           {todoList.map((item) => (
-            <li key={item.id}>
+            <li key={item._id}>
               <input
                 type="checkbox"
                 className={classes.checkbox}
                 checked={item.isCompleted}
-                onChange={() => handleCheckboxChange(item.id)}
+                onChange={() => handleCheckboxChange(item._id)}
               />
               {item.todo}
               <button
-                onClick={() => handleDeleteItem(item.id)}
-                className={classes.deleteItem}
+                onClick={() => handleDeleteItem(item._id)}
+                className={classes.deletitem}
               >
                 Delete
               </button>
@@ -138,7 +174,7 @@ useEffect(()=>{
         </ul>
       </div>
       <button className={classes.navigate} onClick={navigateHandler}>
-        See completed Tasks
+        See Completed Tasks
       </button>
     </div>
   );

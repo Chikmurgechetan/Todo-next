@@ -1,9 +1,19 @@
-.items{
+.container{
+    text-align: center;
     color: white;
+    border: 1px solid rgb(5, 4, 4);
+}
+.uiitem {
+    color: white;
+    border: 1px solid blue;
+    margin-left: 25rem;
+    margin-right: 25rem;
+    list-style: none;
+}
+.listItme {
+    border: 1px solid white;
+    margin: 5px;
 }
 
-.item{
-    color: red;
-    border: 1px solid white;
-}
+
 
