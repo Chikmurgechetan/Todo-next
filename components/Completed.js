@@ -59,7 +59,6 @@ function Completed() {
     const updatedData = todoList.map((item) => {
       if (item._id === id) {
         // Toggle the isCompleted value
-        console.log(item);
         return {
           ...item,
           isCompleted: !item.isCompleted,
@@ -79,9 +78,11 @@ function Completed() {
       body: JSON.stringify(updatedItem),
     });
 
-    console.log(response);
-    const responseData = await response.text(); // Try using response.text() instead of response.json()
-    console.log(responseData);
+    if (response.ok) {
+      fetchData(); // Fetch data again to ensure the latest state from the server
+    } else {
+      console.error("Error updating item:", response.status);
+    }
   };
 
   const handleDeleteItem = async (id) => {
@@ -91,19 +92,22 @@ function Completed() {
       });
 
       if (response.ok) {
-        fetchData();
-        console.log("item deleted successfully");
+        fetchData(); // Fetch data again to ensure the latest state from the server
+        console.log("Item deleted successfully");
       } else {
-        console.log("error deleting item:", response.status);
+        console.error("Error deleting item:", response.status);
       }
     } catch (error) {
-      console.log("Error deleting item", error.message);
+      console.error("Error deleting item:", error.message);
     }
   };
 
   const navigateHandler = () => {
     router.push("/completed");
   };
+
+  // Filter out completed items for rendering
+  const incompleteItems = todoList.filter((item) => !item.isCompleted);
 
   return (
     <div className={classes.container}>
@@ -125,7 +129,7 @@ function Completed() {
       <div className={classes.todoList}>
         <h2>Today's Tasks:</h2>
         <ul className={classes.list}>
-          {todoList.map((item) => (
+          {incompleteItems.map((item) => (
             <li key={item._id}>
               <input
                 type="checkbox"
@@ -136,7 +140,7 @@ function Completed() {
               {item.todo}
               <button
                 onClick={() => handleDeleteItem(item._id)}
-                className={classes.deletitem}
+                className={classes.deleteItem}
               >
                 Delete
               </button>
